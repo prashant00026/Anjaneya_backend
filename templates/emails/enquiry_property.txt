@@ -1,4 +1,4 @@
-New inquiry received
+New enquiry received
 ====================
 
 Project: {{ project_title }}

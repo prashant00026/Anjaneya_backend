@@ -1,0 +1,38 @@
+# Development & test dependencies.
+# Install with:  pip install -r requirements-dev.txt
+# (pulls in requirements.txt too)
+
+-r requirements.txt
+
+# --- Installed & pinned (verified in the project venv) ---
+django-debug-toolbar==6.3.0     # query panels at /__debug__/ (dev only)
+playwright==1.59.0              # scripts/crawl_frontend.py — frontend research
+pyee==13.0.1                    # playwright dep
+greenlet==3.5.0                 # playwright dep
+python-magic-bin==0.4.14        # Windows-only libmagic shim (Linux uses apt `libmagic1`)
+flower==2.0.1                   # Celery monitoring UI (only useful if a worker is running)
+tornado==6.5.5                  # flower dep
+prometheus_client==0.25.0       # flower dep
+humanize==4.15.0                # flower dep
+
+# --- Test & lint tooling ---
+# Versions intentionally left to the resolver: this file is never deployed
+# to production, and the project's test runner is still `manage.py test`
+# (Django TestCase). These are listed per the deployment brief; wiring up
+# pytest discovery / ruff / bandit config is a separate task, not part of
+# the deployment step. `deploy/scripts/pre_deploy_check.sh` currently runs
+# `manage.py test` and leaves the pytest/ruff/bandit lines commented.
+pytest
+pytest-django
+pytest-cov
+pytest-xdist
+pytest-mock
+factory-boy
+faker
+freezegun
+responses
+ruff
+mypy
+django-stubs
+bandit
+pre-commit

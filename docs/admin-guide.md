@@ -20,7 +20,7 @@ If you forget your password, ask the super admin to reset it from
 The sidebar is grouped into four sections:
 
 - **Listings** — `Projects`, `Cities`, `Categories`, `Developers`, `Amenities`
-- **Inquiries** — `Enquiries`
+- **Enquiries** — `Enquiries`
 - **Content** — `Site settings`, `CMS pages`, `Team`, `Testimonials`
 - **System** — `Users`, `Groups`, `Failed notifications`, `Periodic tasks`, `Task results`
 

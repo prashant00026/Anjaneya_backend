@@ -43,11 +43,11 @@ def _register_beat_schedule(sender, **kwargs):
         day_of_month="*", month_of_year="*",
     )
     PeriodicTask.objects.update_or_create(
-        name="notifications.remind_unread_inquiries",
+        name="notifications.remind_unread_enquiries",
         defaults={
-            "task": "notifications.tasks.remind_unread_inquiries",
+            "task": "notifications.tasks.remind_unread_enquiries",
             "crontab": every_6h,
             "enabled": True,
-            "description": "Nag email for inquiries still 'new' after 24 hours.",
+            "description": "Nag email for enquiries still 'new' after 24 hours.",
         },
     )

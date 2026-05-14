@@ -195,7 +195,7 @@ Members shipped: Rohit Aggarwal (Founder & CEO), Vikrant Singh (Co-Founder & COO
 | **TeamMember**    | Team page records                                            | High       |
 | **Testimonial**   | Home page testimonial carousel                               | High       |
 | **Service** (footer) | "Our Services" list                                        | Medium — currently static text; may become a CMS list |
-| **Enquiry / Inquiry** | Contact-page form + project sidebar form (same shape)    | High       |
+| **Enquiry / Enquiry** | Contact-page form + project sidebar form (same shape)    | High       |
 | **CompanyStat**   | Hero `98+` / `100Cr+`                                        | Low — could just be hard-coded site settings |
 | **SiteSettings**  | Phone, email, address, social links, copyright year         | High (single-row config) |
 | **CmsPage**       | About page; legal pages (Privacy/Terms/Disclaimer) referenced but not built | Medium |

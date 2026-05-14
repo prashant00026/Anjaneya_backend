@@ -15,7 +15,7 @@ from .models import Enquiry
 
 
 @override_settings(
-    INQUIRY_NOTIFICATION_EMAILS=["ops@example.com"],
+    ENQUIRY_NOTIFICATION_EMAILS=["ops@example.com"],
     DEFAULT_FROM_EMAIL="no-reply@example.com",
     EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
     # Step 7: emails go through Celery now. EAGER mode runs tasks
@@ -72,7 +72,7 @@ class EnquiryEmailTests(APITestCase):
         self.assertIn("Walk-in Visitor", mail.outbox[0].subject)
         self.assertNotIn("CRC", mail.outbox[0].subject)
 
-    @override_settings(INQUIRY_NOTIFICATION_EMAILS=[])
+    @override_settings(ENQUIRY_NOTIFICATION_EMAILS=[])
     def test_no_email_when_recipients_empty(self):
         mail.outbox = []
         with self.captureOnCommitCallbacks(execute=True):

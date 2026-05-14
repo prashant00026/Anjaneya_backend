@@ -18,10 +18,10 @@ extend `templates/emails/base.html` for the chrome.
 
 | Template base | Trigger | Recipients | Source |
 | --- | --- | --- | --- |
-| `emails/inquiry_property` | `Enquiry.save()` where `project` is set | `INQUIRY_NOTIFICATION_EMAILS` | `notifications.tasks.queue_inquiry_notification` |
-| `emails/inquiry_contact` | `Enquiry.save()` where `project` is null | `INQUIRY_NOTIFICATION_EMAILS` | same |
-| `emails/daily_summary` | beat: every day at 09:00 server time | `INQUIRY_NOTIFICATION_EMAILS` | `notifications.tasks.send_daily_admin_summary` |
-| `emails/unread_reminder` | beat: every 6 hours | `INQUIRY_NOTIFICATION_EMAILS` | `notifications.tasks.remind_unread_inquiries` |
+| `emails/enquiry_property` | `Enquiry.save()` where `project` is set | `ENQUIRY_NOTIFICATION_EMAILS` | `notifications.tasks.queue_enquiry_notification` |
+| `emails/enquiry_contact` | `Enquiry.save()` where `project` is null | `ENQUIRY_NOTIFICATION_EMAILS` | same |
+| `emails/daily_summary` | beat: every day at 09:00 server time | `ENQUIRY_NOTIFICATION_EMAILS` | `notifications.tasks.send_daily_admin_summary` |
+| `emails/unread_reminder` | beat: every 6 hours | `ENQUIRY_NOTIFICATION_EMAILS` | `notifications.tasks.remind_unread_enquiries` |
 
 All four can also be queued ad-hoc from `/admin/notifications/failednotification/test-email/` for SMTP smoke testing.
 
@@ -33,8 +33,8 @@ admin at `/admin/django_celery_beat/`.
 
 | Task | Schedule | Behaviour |
 | --- | --- | --- |
-| `notifications.tasks.send_daily_admin_summary` | daily, 09:00 (cron `0 9 * * *`) | Roll-up: site enquiries (24h), project enquiries (24h), top 5 projects by enquiry count, top 5 localities, new published projects. Skips quietly if `INQUIRY_NOTIFICATION_EMAILS` is empty. |
-| `notifications.tasks.remind_unread_inquiries` | every 6 hours (cron `0 */6 * * *`) | Lists enquiries with `status=new` older than 24h (top 25). Nothing to send if everything's been touched. |
+| `notifications.tasks.send_daily_admin_summary` | daily, 09:00 (cron `0 9 * * *`) | Roll-up: site enquiries (24h), project enquiries (24h), top 5 projects by enquiry count, top 5 localities, new published projects. Skips quietly if `ENQUIRY_NOTIFICATION_EMAILS` is empty. |
+| `notifications.tasks.remind_unread_enquiries` | every 6 hours (cron `0 */6 * * *`) | Lists enquiries with `status=new` older than 24h (top 25). Nothing to send if everything's been touched. |
 
 ### Skipped (deferred from steps 5+6)
 
@@ -48,7 +48,7 @@ Both can be added later by introducing the underlying fields first.
 ```python
 notifications.tasks.send_email_task.delay(
     subject="...",
-    template_base="emails/inquiry_property",
+    template_base="emails/enquiry_property",
     context={...},
     to=["ops@example.com"],          # str or list
     from_email=None,                  # falls back to DEFAULT_FROM_EMAIL
@@ -64,7 +64,7 @@ notifications.tasks.send_email_task.delay(
 | Field | Type | Notes |
 | --- | --- | --- |
 | `subject` | CharField(255) | |
-| `template_base` | CharField(120) | e.g. `emails/inquiry_property` |
+| `template_base` | CharField(120) | e.g. `emails/enquiry_property` |
 | `recipients` | TextField | comma-separated |
 | `context_json` | JSONField | full context passed to the task; sufficient to retry |
 | `from_email` | CharField(255) | empty = use `DEFAULT_FROM_EMAIL` on retry |
@@ -104,7 +104,7 @@ actually run a worker; on Windows install [Memurai](https://www.memurai.com/) or
 Tests use `CELERY_TASK_ALWAYS_EAGER=True` so they execute tasks inline
 and don't need a broker. The API also keeps working without a worker —
 `send_email_task.delay(...)` just queues into Redis and returns; if no
-worker drains the queue, emails simply pile up. Inquiry creation does
+worker drains the queue, emails simply pile up. Enquiry creation does
 not block on Redis availability beyond the network round-trip.
 
 ## 7. Settings (`core/settings/base.py`)
@@ -122,7 +122,7 @@ not block on Redis availability beyond the network round-trip.
 | `CELERY_TIMEZONE` | `Asia/Kolkata` (= `TIME_ZONE`) | — |
 | `EMAIL_BACKEND` | console in dev, SMTP in prod | `EMAIL_BACKEND` |
 | `DEFAULT_FROM_EMAIL` | `Anjaneya <no-reply@...>` | `DEFAULT_FROM_EMAIL` |
-| `INQUIRY_NOTIFICATION_EMAILS` | empty (no-op) | `INQUIRY_NOTIFICATION_EMAILS` (CSV) |
+| `ENQUIRY_NOTIFICATION_EMAILS` | empty (no-op) | `ENQUIRY_NOTIFICATION_EMAILS` (CSV) |
 
 Standard SMTP knobs (`EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_HOST_USER`,
 `EMAIL_HOST_PASSWORD`, `EMAIL_USE_TLS`) ride on Django's defaults.
@@ -137,7 +137,7 @@ The wiring lives in `apps/enquiries/apps.py`:
 ```python
 post_save.connect(
     lambda sender, instance, created, **kw: created and transaction.on_commit(
-        lambda: queue_inquiry_notification(instance)
+        lambda: queue_enquiry_notification(instance)
     ),
     sender=Enquiry,
 )
@@ -151,7 +151,7 @@ never fire.
 ## 9. Admin tools
 
 - `/admin/notifications/failednotification/` — list of failed sends. Each row stores enough context to re-fire the task via the "Retry selected" bulk action.
-- `/admin/notifications/failednotification/test-email/` — small form (recipient + template) that queues a task with sample context. Useful for verifying SMTP creds without faking an inquiry. Staff only.
+- `/admin/notifications/failednotification/test-email/` — small form (recipient + template) that queues a task with sample context. Useful for verifying SMTP creds without faking an enquiry. Staff only.
 - `/admin/django_celery_beat/periodictask/` — edit cron expressions / disable a schedule live.
 - `/admin/django_celery_results/taskresult/` — every task's outcome, status, traceback if any.
 
@@ -162,11 +162,11 @@ was updated to use `captureOnCommitCallbacks` since email is now async.
 
 Notable design notes encoded in the tests:
 - `EmailTask.on_failure` is tested directly rather than by exhausting the retry budget. Eager-mode retries don't loop and would just propagate Celery's `Retry` exception; the retry logic itself is Celery's well-trodden code. What we own is the persistence in `on_failure`.
-- The signal test uses `mock.patch(...)` to confirm `queue_inquiry_notification` runs from inside an `on_commit` callback rather than synchronously.
+- The signal test uses `mock.patch(...)` to confirm `queue_enquiry_notification` runs from inside an `on_commit` callback rather than synchronously.
 
 ## 11. Deferred / future
 
-- Move `send_inquiry_email` consumers (currently just one — the Enquiry signal) onto a higher-level helper if more apps start producing emails.
+- Move `send_enquiry_email` consumers (currently just one — the Enquiry signal) onto a higher-level helper if more apps start producing emails.
 - Add an admin dashboard widget for "Tasks in last 24h" using `django-celery-results` — skipped for now per the brief's "don't over-build" note.
 - Slack / SMS / push notifications — not in scope until there's a product request.
 - A proper unsubscribe flow — only relevant once we email external users (today every recipient is admin staff via env-configured CSV).

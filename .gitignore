@@ -23,6 +23,7 @@ ENV/
 local_settings.py
 db.sqlite3
 db.sqlite3-journal
+*.sqlite3
 
 # Migrations are kept in source control by default; uncomment if regenerated.
 # */migrations/*.py
@@ -30,11 +31,18 @@ db.sqlite3-journal
 
 # --- Secrets / env ----------------------------------------------------------
 .env
+.env.production
 .env.local
 .env.*.local
 
+# --- Database dumps / backups -----------------------------------------------
+*.sql
+*.dump
+/backups/
+
 # --- Media & uploads --------------------------------------------------------
-media/
+# Anchored to the repo root; the tracked media/.gitkeep keeps the dir present.
+/media/
 !media/.gitkeep
 
 # --- Static collection target -----------------------------------------------

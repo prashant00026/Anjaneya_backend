@@ -6,7 +6,7 @@ Covers:
     - The Enquiry post_save signal queues exactly one async email,
       wrapped in transaction.on_commit
     - Daily summary task aggregates and renders without errors
-    - Unread-inquiry reminder respects the 24h cutoff
+    - Unread-enquiry reminder respects the 24h cutoff
 """
 
 from datetime import timedelta
@@ -26,8 +26,8 @@ from projects.models import Project
 from .models import FailedNotification
 from .services import send_templated_email
 from .tasks import (
-    queue_inquiry_notification,
-    remind_unread_inquiries,
+    queue_enquiry_notification,
+    remind_unread_enquiries,
     send_daily_admin_summary,
     send_email_task,
 )
@@ -53,7 +53,7 @@ _TEST_REST_FRAMEWORK = {
 @override_settings(
     EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
     DEFAULT_FROM_EMAIL="Anjaneya <no-reply@example.com>",
-    INQUIRY_NOTIFICATION_EMAILS=["ops@example.com"],
+    ENQUIRY_NOTIFICATION_EMAILS=["ops@example.com"],
     CELERY_TASK_ALWAYS_EAGER=True,
     CELERY_TASK_EAGER_PROPAGATES=True,
 )
@@ -66,7 +66,7 @@ class ServiceTests(APITestCase):
     def test_renders_html_and_text_variants(self):
         n = send_templated_email(
             subject="Hello",
-            template_base="emails/inquiry_contact",
+            template_base="emails/enquiry_contact",
             context={
                 "full_name": "Test Person", "mobile": "+910000000000",
                 "email": "t@example.com", "message": "hi",
@@ -88,7 +88,7 @@ class ServiceTests(APITestCase):
 
     def test_normalises_recipients_csv(self):
         send_templated_email(
-            subject="x", template_base="emails/inquiry_contact",
+            subject="x", template_base="emails/enquiry_contact",
             context={"full_name": "x", "mobile": "x", "email": "x", "message": "x",
                      "source_label": "x", "created_at": "x", "ip_address": "x",
                      "admin_path": "/"},
@@ -99,7 +99,7 @@ class ServiceTests(APITestCase):
 
 @override_settings(
     EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
-    INQUIRY_NOTIFICATION_EMAILS=["ops@example.com"],
+    ENQUIRY_NOTIFICATION_EMAILS=["ops@example.com"],
     CELERY_TASK_ALWAYS_EAGER=True,
     CELERY_TASK_EAGER_PROPAGATES=True,
 )
@@ -118,7 +118,7 @@ class TaskFailureTests(APITestCase):
             args=(),
             kwargs={
                 "subject": "boom",
-                "template_base": "emails/inquiry_contact",
+                "template_base": "emails/enquiry_contact",
                 "context": {"full_name": "x"},
                 "to": ["ops@example.com"],
             },
@@ -128,7 +128,7 @@ class TaskFailureTests(APITestCase):
         self.assertEqual(FailedNotification.objects.count(), 1)
         row = FailedNotification.objects.get()
         self.assertEqual(row.subject, "boom")
-        self.assertEqual(row.template_base, "emails/inquiry_contact")
+        self.assertEqual(row.template_base, "emails/enquiry_contact")
         self.assertIn("ConnectionError", row.error_message)
         self.assertEqual(row.recipient_list, ["ops@example.com"])
 
@@ -138,7 +138,7 @@ class TaskFailureTests(APITestCase):
         send_email_task.on_failure(
             exc=ConnectionError("nope"),
             task_id="t2",
-            args=("subject-x", "emails/inquiry_contact", {"a": 1}, "x@x.com"),
+            args=("subject-x", "emails/enquiry_contact", {"a": 1}, "x@x.com"),
             kwargs={},
             einfo=None,
         )
@@ -149,12 +149,12 @@ class TaskFailureTests(APITestCase):
 
 @override_settings(
     EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
-    INQUIRY_NOTIFICATION_EMAILS=["ops@example.com"],
+    ENQUIRY_NOTIFICATION_EMAILS=["ops@example.com"],
     CELERY_TASK_ALWAYS_EAGER=True,
     CELERY_TASK_EAGER_PROPAGATES=True,
     REST_FRAMEWORK=_TEST_REST_FRAMEWORK,  # drop the throttle for this test
 )
-class InquiryFlowTests(APITestCase):
+class EnquiryFlowTests(APITestCase):
     """End-to-end: API call → DB row → on_commit → task → email in outbox."""
 
     @classmethod
@@ -169,7 +169,7 @@ class InquiryFlowTests(APITestCase):
     def setUp(self):
         mail.outbox = []
 
-    def test_property_inquiry_queues_exactly_one_email(self):
+    def test_property_enquiry_queues_exactly_one_email(self):
         # `transaction.on_commit` doesn't fire inside the test transaction;
         # `captureOnCommitCallbacks(execute=True)` runs them on exit.
         with self.captureOnCommitCallbacks(execute=True):
@@ -184,11 +184,11 @@ class InquiryFlowTests(APITestCase):
         self.assertEqual(r.status_code, status.HTTP_201_CREATED, r.content)
         self.assertEqual(len(mail.outbox), 1)
         msg = mail.outbox[0]
-        self.assertEqual(msg.subject, f"New inquiry: {self.project.title}")
+        self.assertEqual(msg.subject, f"New enquiry: {self.project.title}")
         self.assertIn("CRC Flagship", msg.alternatives[0][0])
         self.assertIn("Interested in pricing", msg.body)
 
-    def test_contact_inquiry_uses_site_template(self):
+    def test_contact_enquiry_uses_site_template(self):
         with self.captureOnCommitCallbacks(execute=True):
             r = self.client.post("/api/v1/enquiries/", {
                 "full_name": "Walk-in",
@@ -202,7 +202,7 @@ class InquiryFlowTests(APITestCase):
         self.assertNotIn("CRC", mail.outbox[0].subject)
 
     def test_no_email_when_recipients_empty(self):
-        with override_settings(INQUIRY_NOTIFICATION_EMAILS=[]):
+        with override_settings(ENQUIRY_NOTIFICATION_EMAILS=[]):
             with self.captureOnCommitCallbacks(execute=True):
                 self.client.post("/api/v1/enquiries/", {
                     "full_name": "X", "mobile": "+919999999997",
@@ -214,7 +214,7 @@ class InquiryFlowTests(APITestCase):
         """Confirms the post_save handler registers an on_commit hook
         rather than calling the queue function synchronously."""
         with mock.patch(
-            "notifications.tasks.queue_inquiry_notification",
+            "notifications.tasks.queue_enquiry_notification",
         ) as queue:
             with self.captureOnCommitCallbacks(execute=True):
                 Enquiry.objects.create(
@@ -227,7 +227,7 @@ class InquiryFlowTests(APITestCase):
 
 @override_settings(
     EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
-    INQUIRY_NOTIFICATION_EMAILS=["ops@example.com"],
+    ENQUIRY_NOTIFICATION_EMAILS=["ops@example.com"],
     CELERY_TASK_ALWAYS_EAGER=True,
     CELERY_TASK_EAGER_PROPAGATES=True,
 )
@@ -273,7 +273,7 @@ class PeriodicTaskTests(APITestCase):
         self.assertIn("CRC Flagship", msg.alternatives[0][0])
 
     def test_unread_reminder_emails_only_stale_new(self):
-        remind_unread_inquiries()
+        remind_unread_enquiries()
         self.assertEqual(len(mail.outbox), 1)
         body_html = mail.outbox[0].alternatives[0][0]
         self.assertIn("Stale", body_html)
@@ -282,5 +282,5 @@ class PeriodicTaskTests(APITestCase):
 
     def test_unread_reminder_skips_when_nothing_stale(self):
         Enquiry.objects.update(status=Enquiry.Status.CONTACTED)
-        remind_unread_inquiries()
+        remind_unread_enquiries()
         self.assertEqual(len(mail.outbox), 0)

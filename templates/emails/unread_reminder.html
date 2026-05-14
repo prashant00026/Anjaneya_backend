@@ -1,9 +1,9 @@
 {% extends "emails/base.html" %}
-{% block subject %}{{ count }} unread inquiry(ies) older than 24 hours{% endblock %}
+{% block subject %}{{ count }} unread enquiry(ies) older than 24 hours{% endblock %}
 {% block body %}
-<h2 style="margin:0 0 4px;font-size:18px;">Stale inquiries</h2>
+<h2 style="margin:0 0 4px;font-size:18px;">Stale enquiries</h2>
 <p style="margin:0 0 16px;color:#666;font-size:13px;">
-  {{ count }} inquir{{ count|pluralize:"y,ies" }} {{ count|pluralize:"is,are" }}
+  {{ count }} enquir{{ count|pluralize:"y,ies" }} {{ count|pluralize:"is,are" }}
   still marked <code>new</code> and older than {{ cutoff|date:"Y-m-d H:i" }}.
 </p>
 

@@ -3,7 +3,7 @@
 `send_email_task` is the universal "send mail" entrypoint:
     send_email_task.delay(
         subject="…",
-        template_base="emails/inquiry_property",
+        template_base="emails/enquiry_property",
         context={…},
         to=["ops@example.com"],
     )
@@ -103,16 +103,16 @@ def send_email_task(
 
 @shared_task
 def send_daily_admin_summary():
-    """Daily roll-up email to INQUIRY_NOTIFICATION_EMAILS."""
+    """Daily roll-up email to ENQUIRY_NOTIFICATION_EMAILS."""
     from django.conf import settings as dj_settings
     from django.db.models import Count
 
     from enquiries.models import Enquiry
     from projects.models import Project
 
-    recipients = list(getattr(dj_settings, "INQUIRY_NOTIFICATION_EMAILS", []) or [])
+    recipients = list(getattr(dj_settings, "ENQUIRY_NOTIFICATION_EMAILS", []) or [])
     if not recipients:
-        log.info("Skipping daily summary: INQUIRY_NOTIFICATION_EMAILS empty.")
+        log.info("Skipping daily summary: ENQUIRY_NOTIFICATION_EMAILS empty.")
         return
 
     since = timezone.now() - timedelta(days=1)
@@ -156,13 +156,13 @@ def send_daily_admin_summary():
 
 
 @shared_task
-def remind_unread_inquiries():
+def remind_unread_enquiries():
     """If any enquiry older than 24h is still `status=new`, send a nag email."""
     from django.conf import settings as dj_settings
 
     from enquiries.models import Enquiry
 
-    recipients = list(getattr(dj_settings, "INQUIRY_NOTIFICATION_EMAILS", []) or [])
+    recipients = list(getattr(dj_settings, "ENQUIRY_NOTIFICATION_EMAILS", []) or [])
     if not recipients:
         return
 
@@ -191,7 +191,7 @@ def remind_unread_inquiries():
         "cutoff": cutoff,
     }
     send_email_task.delay(
-        subject=f"Reminder: {len(stale)} unread inquiry(ies) older than 24 hours",
+        subject=f"Reminder: {len(stale)} unread enquiry(ies) older than 24 hours",
         template_base="emails/unread_reminder",
         context=ctx,
         to=recipients,
@@ -202,23 +202,23 @@ def remind_unread_inquiries():
 # Wrapper used by apps/enquiries/apps.py to queue the right email per source.
 # ---------------------------------------------------------------------------
 
-def queue_inquiry_notification(enquiry):
+def queue_enquiry_notification(enquiry):
     """Build context + queue the email task. Caller is expected to wrap in
     `transaction.on_commit(...)` if invoked inside a DB transaction.
     """
     from django.conf import settings as dj_settings
     from django.urls import reverse
 
-    recipients = list(getattr(dj_settings, "INQUIRY_NOTIFICATION_EMAILS", []) or [])
+    recipients = list(getattr(dj_settings, "ENQUIRY_NOTIFICATION_EMAILS", []) or [])
     if not recipients:
         return
 
     project_title = enquiry.project.title if enquiry.project_id else None
     if project_title:
-        template = "emails/inquiry_property"
-        subject = f"New inquiry: {project_title}"
+        template = "emails/enquiry_property"
+        subject = f"New enquiry: {project_title}"
     else:
-        template = "emails/inquiry_contact"
+        template = "emails/enquiry_contact"
         subject = f"New site enquiry from {enquiry.full_name}"
 
     try:

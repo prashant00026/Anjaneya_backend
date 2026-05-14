@@ -26,7 +26,7 @@ Gaps vs step 8 brief:
 - No custom display methods for `locality_with_city` or Indian-format price.
 - No actions: "Publish selected", "Unpublish", "Mark featured", "Unfeature", "Duplicate listing".
 - No "View on site" link on the change form.
-- No "Recent inquiries" sidebar on the change form.
+- No "Recent enquiries" sidebar on the change form.
 - No `save_on_top = True`.
 - No `save_model` hook to auto-stamp `published_at` (currently done in `Project.save()`, which is fine — note for the brief).
 
@@ -111,7 +111,7 @@ frontend grows that UI."
 Build the items that pay off for actual day-to-day admin work and
 don't require speculation:
 
-1. **`django-unfold` theme** — modern look, dark mode, sidebar grouping ("Listings / Inquiries / Content / System"). Real UX win, low risk.
+1. **`django-unfold` theme** — modern look, dark mode, sidebar grouping ("Listings / Enquiries / Content / System"). Real UX win, low risk.
 2. **Project admin polish** within current schema:
    - `thumbnail()` callable in list_display
    - `locality_with_city()` callable
@@ -150,7 +150,7 @@ Adds on top of Path A:
 - Brand-new CMS models: `HomepageBanner`, `FeaturedCity`, `FAQ` — with admin + public endpoints
 - `TinyMCE` on `CmsPage.body` (changes the Markdown contract)
 - `django-admin-sortable2` for drag-reorder on inlines
-- Permission groups: Super Admin / Content Manager / Inquiry Manager / Agent — with `created_by` filtering for Agent
+- Permission groups: Super Admin / Content Manager / Enquiry Manager / Agent — with `created_by` filtering for Agent
 - `is_read` + `is_spam` on `Enquiry` (parallel to existing `status`)
 
 This is most of step 5 Path B + step 6 Path B + step 8's full CMS catalog. Real cost: 7–10 new migrations, schema redesign, plus admin/serializer/endpoint maintenance for models nothing currently consumes.

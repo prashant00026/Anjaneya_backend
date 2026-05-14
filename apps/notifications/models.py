@@ -11,7 +11,7 @@ class FailedNotification(models.Model):
     subject = models.CharField(max_length=255)
     template_base = models.CharField(
         max_length=120,
-        help_text="Template name without extension (e.g. 'emails/inquiry_property').",
+        help_text="Template name without extension (e.g. 'emails/enquiry_property').",
     )
     recipients = models.TextField(
         help_text="Comma-separated list of recipient addresses.",

@@ -18,9 +18,9 @@ class EnquiriesConfig(AppConfig):
             # worker is guaranteed to see the row when it picks the task up.
             # `on_commit` runs the callback immediately if no transaction
             # is active, so admin shell creation works too.
-            from notifications.tasks import queue_inquiry_notification
+            from notifications.tasks import queue_enquiry_notification
 
-            transaction.on_commit(lambda: queue_inquiry_notification(instance))
+            transaction.on_commit(lambda: queue_enquiry_notification(instance))
 
         post_save.connect(
             _on_create, sender=Enquiry, weak=False,

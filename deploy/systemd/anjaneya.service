@@ -1,0 +1,29 @@
+[Unit]
+Description=Anjaneya Django Gunicorn Service
+Requires=anjaneya.socket
+After=network.target postgresql.service redis-server.service
+
+[Service]
+Type=notify
+User=jarvis
+Group=jarvis
+RuntimeDirectory=anjaneya
+WorkingDirectory=/home/jarvis/anjaneya
+EnvironmentFile=/home/jarvis/anjaneya/.env
+ExecStart=/home/jarvis/anjaneya/venv/bin/gunicorn \
+    --config /home/jarvis/anjaneya/deploy/gunicorn.conf.py \
+    core.wsgi:application
+ExecReload=/bin/kill -s HUP $MAINPID
+KillMode=mixed
+TimeoutStopSec=30
+PrivateTmp=true
+Restart=always
+RestartSec=5
+
+NoNewPrivileges=true
+ProtectSystem=full
+ProtectHome=false
+ReadWritePaths=/home/jarvis/anjaneya /var/log/anjaneya /run/anjaneya
+
+[Install]
+WantedBy=multi-user.target

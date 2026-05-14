@@ -53,7 +53,7 @@ class FailedNotificationAdmin(ModelAdmin):
 
     # ---- Test-email tool -------------------------------------------------
     # A small admin page that lets staff queue a sample email to verify
-    # SMTP config without faking an inquiry. Visible to users with
+    # SMTP config without faking an enquiry. Visible to users with
     # `notifications.view_failednotification` permission (i.e. any staff
     # who can see this admin section).
 
@@ -104,8 +104,8 @@ class FailedNotificationAdmin(ModelAdmin):
 
 class TestEmailForm(forms.Form):
     TEMPLATE_CHOICES = (
-        ("inquiry_property", "Inquiry — property"),
-        ("inquiry_contact", "Inquiry — site contact"),
+        ("enquiry_property", "Enquiry — property"),
+        ("enquiry_contact", "Enquiry — site contact"),
         ("daily_summary", "Daily summary"),
         ("unread_reminder", "Unread reminder"),
     )
@@ -115,14 +115,14 @@ class TestEmailForm(forms.Form):
 
 def _sample_context_for(template: str) -> dict:
     """Plausible context for the test-email tool so the templates render."""
-    if template in ("inquiry_property", "inquiry_contact"):
+    if template in ("enquiry_property", "enquiry_contact"):
         return {
             "full_name": "Test Person",
             "mobile": "+919999999999",
             "email": "test@example.com",
-            "message": "Sample inquiry message for SMTP smoke test.",
-            "project_title": "Sample Project" if template == "inquiry_property" else None,
-            "source_label": "Project sidebar" if template == "inquiry_property" else "Contact page",
+            "message": "Sample enquiry message for SMTP smoke test.",
+            "project_title": "Sample Project" if template == "enquiry_property" else None,
+            "source_label": "Project sidebar" if template == "enquiry_property" else "Contact page",
             "created_at": timezone.now().isoformat(),
             "ip_address": "127.0.0.1",
             "admin_path": "/admin/",

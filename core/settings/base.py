@@ -231,7 +231,7 @@ UNFOLD = {
                 ],
             },
             {
-                "title": "Inquiries",
+                "title": "Enquiries",
                 "separator": True,
                 "items": [
                     {
@@ -392,9 +392,9 @@ EMAIL_USE_TLS = config("EMAIL_USE_TLS", default=False, cast=bool)
 DEFAULT_FROM_EMAIL = config(
     "DEFAULT_FROM_EMAIL", default="no-reply@anjaneyaglobalrealty.com",
 )
-# CSV of admin emails that receive new-inquiry notifications. Empty = none.
-INQUIRY_NOTIFICATION_EMAILS = config(
-    "INQUIRY_NOTIFICATION_EMAILS", default="", cast=Csv(),
+# CSV of admin emails that receive new-enquiry notifications. Empty = none.
+ENQUIRY_NOTIFICATION_EMAILS = config(
+    "ENQUIRY_NOTIFICATION_EMAILS", default="", cast=Csv(),
 )
 
 
@@ -438,6 +438,9 @@ CELERY_TASK_EAGER_PROPAGATES = True
 # ---------------------------------------------------------------------------
 # Logging
 # ---------------------------------------------------------------------------
+# This is the DEVELOPMENT logging config — production.py overrides LOGGING
+# entirely to write under /var/log/anjaneya/. `delay=True` keeps the file
+# handler import-safe (the file isn't opened until the first record).
 LOGS_DIR = BASE_DIR / "logs"
 LOGS_DIR.mkdir(exist_ok=True)
 
@@ -465,6 +468,7 @@ LOGGING = {
             "maxBytes": 5 * 1024 * 1024,
             "backupCount": 5,
             "formatter": "verbose",
+            "delay": True,
         },
     },
     "root": {

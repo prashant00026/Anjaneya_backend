@@ -1,6 +1,6 @@
-Stale inquiries
+Stale enquiries
 ===============
-{{ count }} inquir{{ count|pluralize:"y,ies" }} still marked "new" older than {{ cutoff|date:"Y-m-d H:i" }}.
+{{ count }} enquir{{ count|pluralize:"y,ies" }} still marked "new" older than {{ cutoff|date:"Y-m-d H:i" }}.
 
 {% for e in enquiries %}#{{ e.id }}  {{ e.name }}  ({{ e.mobile }})  · {{ e.project_title|default:"—" }} · submitted {{ e.created_at|date:"Y-m-d H:i" }}
 {% endfor %}

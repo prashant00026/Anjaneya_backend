@@ -10,19 +10,19 @@ feature buckets in the step 6 brief.
 
 | Brief feature | Frontend surface today | Already built? |
 | --- | --- | --- |
-| **Contact / inquiry form** | ✅ Two forms: the sticky sidebar on the project detail (`name / mobile / email / message`) and the (404-but-bundled) `/contact` page using the same shape. The home page has a `Connect with us` CTA that links to the contact page. | **Yes** — `apps/enquiries.Enquiry` (single model, nullable `project` FK, `source` distinguishes `contact_page` vs `project_sidebar`), `POST /api/v1/enquiries/`, throttle 60/hour, honeypot, IP + UA capture, admin with status workflow. Step 2. |
+| **Contact / enquiry form** | ✅ Two forms: the sticky sidebar on the project detail (`name / mobile / email / message`) and the (404-but-bundled) `/contact` page using the same shape. The home page has a `Connect with us` CTA that links to the contact page. | **Yes** — `apps/enquiries.Enquiry` (single model, nullable `project` FK, `source` distinguishes `contact_page` vs `project_sidebar`), `POST /api/v1/enquiries/`, throttle 60/hour, honeypot, IP + UA capture, admin with status workflow. Step 2. |
 | **Featured / Trending** | ✅ Home "Featured Properties" row (3 hard-coded cards). **No "Trending" anywhere.** | **Featured: yes** — `Project.is_featured` + `featured_order`, `GET /api/v1/projects/featured/`. Step 2. Trending: skip — no UI. |
 | **View counter** | ❌ Zero "X views" badges, no "Most viewed" sort dropdown, no view affordance anywhere. Bundle grep for `views?`, `view_count`, `Most viewed`, `eye-icon` returns 0 hits. | Skip. |
 | **Similar properties** | ❌ Project detail page has Gallery / Amenities / Highlights / Developer / Location only. In-page anchors: `overview`, `amenities`, `highlights`, `developers`, `location`. No "Similar properties" / "You may also like" / "More in this locality" carousel. | Skip. |
 | **Share tracking** | ⚠ One floating WhatsApp button on every page (`wa.me/917311103111?text=...`) — a single-channel deep-link with no backend involvement. No multi-channel share menu, no copy-link, no Facebook/Twitter/Email. | Skip — backend has no role in the current share flow. |
 | **Recently viewed** | ❌ No carousel. Bundle has no `localStorage` calls and no UI surface. | Skip — would be frontend-driven anyway. |
 
-The brief's other speculative inquiry-shape items (Schedule Visit,
+The brief's other speculative enquiry-shape items (Schedule Visit,
 Get Callback, Loan Assistance) also have **zero UI** today —
 the sidebar form is a single free-text textarea labeled
 "Any specific requirements?".
 
-## 2. Existing inquiry pipeline (step 2 recap)
+## 2. Existing enquiry pipeline (step 2 recap)
 
 We already have a unified `Enquiry` model that handles both UI forms
 via a `source` choice plus a nullable `project` FK:
@@ -46,15 +46,15 @@ Throttle: 60/hour per IP. Honeypot field. Admin has status workflow,
 date hierarchy, search, autocomplete on `project`.
 
 The step 6 brief proposes splitting this into two separate models
-(`ContactRequest` + `PropertyInquiry`) with a `is_read` boolean, an
-`inquiry_type` choice, optional visit date/time fields, etc. Doing
+(`ContactRequest` + `PropertyEnquiry`) with a `is_read` boolean, an
+`enquiry_type` choice, optional visit date/time fields, etc. Doing
 that here would be a **regression**:
 
 - We'd duplicate fields across two tables for no schema gain (the UI
   forms share the same fields).
 - `is_read` is a subset of the existing `status="new"` — adding it
   would create two parallel sources of truth.
-- `inquiry_type` choices like `site_visit` / `callback` /
+- `enquiry_type` choices like `site_visit` / `callback` /
   `price_negotiation` / `loan_assistance` have **no UI selector** —
   every row would be `general`.
 - `preferred_visit_date` / `preferred_visit_time` would be NULL on
@@ -64,18 +64,18 @@ that here would be a **regression**:
 
 Three things to add. Everything else gets deferred and documented.
 
-### 3.1 Email notification on inquiry submission (✅ implied)
+### 3.1 Email notification on enquiry submission (✅ implied)
 
-Without this, admins only learn about new inquiries by manually
+Without this, admins only learn about new enquiries by manually
 visiting `/admin/enquiries/enquiry/`. That's not visible in the UI
 but it's the obvious admin workflow.
 
 - Send on `Enquiry` create via a `post_save` signal.
-- Template: `templates/emails/inquiry_notification.html` (rendered via
+- Template: `templates/emails/enquiry_notification.html` (rendered via
   Django templates — HTML version) + plain-text auto-stripped fallback.
-- Recipients from `INQUIRY_NOTIFICATION_EMAILS` env var (CSV, empty list
+- Recipients from `ENQUIRY_NOTIFICATION_EMAILS` env var (CSV, empty list
   = no notifications). Defaults to empty so dev runs don't blast email.
-- Subject: `New inquiry: <project title>` when `project` is set, else
+- Subject: `New enquiry: <project title>` when `project` is set, else
   `New site enquiry from <full_name>`.
 - Synchronous, `fail_silently=True` — broken SMTP doesn't break the
   API response. Celery comes in step 7 per the brief.
@@ -93,7 +93,7 @@ bots 1,440 free posts per day).
 - Apply via `throttle_classes = (EnquiryThrottle,)` on the create view
   only (so list/detail endpoints in other apps keep the looser
   anon rate).
-- The brief's "contact" vs "inquiry" split makes sense only if we
+- The brief's "contact" vs "enquiry" split makes sense only if we
   split the models. With a unified model, one scope is right.
 - 429 responses already include `Retry-After` (DRF default behaviour).
 
@@ -120,8 +120,8 @@ grows.
 
 | Skipped | Why | When to revisit |
 | --- | --- | --- |
-| Split `Enquiry` into `ContactRequest` + `PropertyInquiry` | Regression vs unified model; same fields, same UI shape | Only if the two forms diverge in shape |
-| `inquiry_type` choice field | No UI selector; all rows would be `general` | When the form gets a "What can we help with?" dropdown |
+| Split `Enquiry` into `ContactRequest` + `PropertyEnquiry` | Regression vs unified model; same fields, same UI shape | Only if the two forms diverge in shape |
+| `enquiry_type` choice field | No UI selector; all rows would be `general` | When the form gets a "What can we help with?" dropdown |
 | `preferred_visit_date` / `_time` | No date picker UI | When a "Schedule visit" form appears |
 | `view_count` + `last_viewed_at` + `POST /track-view/` | No view affordance; "Most viewed" sort not in UI | When the listings page adds a view counter or sort dropdown |
 | `share_count` + `POST /track-share/` + `ShareEvent` | Single-channel WhatsApp deep-link doesn't touch the backend; no multi-channel share menu | When a multi-channel share component appears |
@@ -137,10 +137,10 @@ User decision: Path A baseline + one B-subset item — the `by-ids`
 endpoint. Everything else from §4 stays skipped.
 
 1. **Email notification** — `apps/enquiries/notifications.py` with a
-   `send_inquiry_email(enquiry)` helper. Connected via `post_save` on
+   `send_enquiry_email(enquiry)` helper. Connected via `post_save` on
    `Enquiry` in `apps/enquiries/apps.py ready()`. HTML template at
-   `templates/emails/inquiry_notification.html`.
-2. **Settings** — `INQUIRY_NOTIFICATION_EMAILS` from env (Csv,
+   `templates/emails/enquiry_notification.html`.
+2. **Settings** — `ENQUIRY_NOTIFICATION_EMAILS` from env (Csv,
    default empty). `EMAIL_BACKEND = console` in `development.py`,
    `DEFAULT_FROM_EMAIL` from env.
 3. **Throttle scope** — `apps/common/throttles.py` adds

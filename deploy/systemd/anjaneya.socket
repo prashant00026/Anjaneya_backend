@@ -1,0 +1,11 @@
+[Unit]
+Description=Anjaneya Gunicorn Socket
+
+[Socket]
+ListenStream=/run/anjaneya/gunicorn.sock
+SocketUser=jarvis
+SocketGroup=www-data
+SocketMode=0660
+
+[Install]
+WantedBy=sockets.target

@@ -16,7 +16,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('subject', models.CharField(max_length=255)),
-                ('template_base', models.CharField(help_text="Template name without extension (e.g. 'emails/inquiry_property').", max_length=120)),
+                ('template_base', models.CharField(help_text="Template name without extension (e.g. 'emails/enquiry_property').", max_length=120)),
                 ('recipients', models.TextField(help_text='Comma-separated list of recipient addresses.')),
                 ('context_json', models.JSONField(blank=True, default=dict)),
                 ('from_email', models.CharField(blank=True, max_length=255)),

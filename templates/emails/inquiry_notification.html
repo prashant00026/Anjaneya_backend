@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>New inquiry</title>
+</head>
+<body style="font-family: -apple-system, Segoe UI, sans-serif; color: #222;">
+  <h2 style="margin-bottom:4px;">New inquiry received</h2>
+  <p style="color:#666; margin-top:0;">Source: {{ source_label }}{% if project_title %} · Project: <strong>{{ project_title }}</strong>{% endif %}</p>
+
+  <table cellspacing="0" cellpadding="6" style="border-collapse:collapse; border:1px solid #eee;">
+    <tr><td><strong>Name</strong></td><td>{{ enquiry.full_name }}</td></tr>
+    <tr><td><strong>Mobile</strong></td><td>{{ enquiry.mobile }}</td></tr>
+    <tr><td><strong>Email</strong></td><td>{{ enquiry.email|default:"—" }}</td></tr>
+    <tr><td><strong>Message</strong></td><td>{{ enquiry.message|default:"—"|linebreaksbr }}</td></tr>
+    <tr><td><strong>Submitted at</strong></td><td>{{ enquiry.created_at|date:"Y-m-d H:i:s T" }}</td></tr>
+    <tr><td><strong>IP address</strong></td><td>{{ enquiry.ip_address|default:"—" }}</td></tr>
+  </table>
+
+  <p style="color:#888; font-size:12px; margin-top:24px;">
+    Open in admin: /admin/enquiries/enquiry/{{ enquiry.pk }}/change/
+  </p>
+</body>
+</html>

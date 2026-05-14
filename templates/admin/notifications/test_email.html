@@ -1,0 +1,15 @@
+{% extends "admin/base_site.html" %}
+
+{% block content %}
+<p><a href="{% url 'admin:notifications_failednotification_changelist' %}">&larr; Back to failed notifications</a></p>
+
+<h1>{{ title }}</h1>
+<p>Queues a Celery task that renders the selected template with sample
+context. Useful for verifying SMTP credentials without faking an inquiry.</p>
+
+<form method="post">
+  {% csrf_token %}
+  {{ form.as_p }}
+  <button type="submit" class="default">Queue test email</button>
+</form>
+{% endblock %}

@@ -35,6 +35,13 @@ ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="localhost,127.0.0.1", cast=Csv(
 # Applications
 # ---------------------------------------------------------------------------
 DJANGO_APPS = [
+    # django-unfold MUST come before `django.contrib.admin` because it
+    # overrides admin templates at import time.
+    "unfold",
+    "unfold.contrib.filters",
+    "unfold.contrib.forms",
+    "unfold.contrib.import_export",
+    "unfold.contrib.simple_history",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -49,10 +56,21 @@ THIRD_PARTY_APPS = [
     "corsheaders",
     "django_filters",
     "drf_spectacular",
+    "imagekit",
+    "django_celery_beat",
+    "django_celery_results",
+    "import_export",
+    "simple_history",
 ]
 
 LOCAL_APPS = [
-    # Local apps will be added here in step 2 (e.g. "accounts", "properties").
+    "catalog",
+    "projects",
+    "enquiries",
+    "team",
+    "testimonials",
+    "site_settings",
+    "notifications",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -73,6 +91,8 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    # simple_history: stamps the acting user onto every Historical* row.
+    "simple_history.middleware.HistoryRequestMiddleware",
 ]
 
 
@@ -113,13 +133,8 @@ AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
 
-# Custom user model.
-# NOTE: The `accounts` app is created in step 2 of the bootstrap. Until then,
-# attempting `migrate` with this line active raises:
-#   "AUTH_USER_MODEL refers to model 'accounts.User' that has not been installed"
-# The initial skeleton was migrated with this line commented out; re-enable it
-# (already done below) once the `accounts` app exists.
-AUTH_USER_MODEL = "accounts.User"
+# No custom user model — this is a listing-only site with no public signup.
+# Django's built-in `auth.User` is used for admin / staff login at /admin/.
 
 
 # ---------------------------------------------------------------------------
@@ -148,6 +163,147 @@ STORAGES = {
 
 
 # ---------------------------------------------------------------------------
+# File uploads & media validation
+# ---------------------------------------------------------------------------
+# Files up to this size stream into memory; larger ones spool to a temp file.
+FILE_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024   # 5 MB
+# Hard cap on total upload body size (multipart with several files).
+DATA_UPLOAD_MAX_MEMORY_SIZE = 30 * 1024 * 1024  # 30 MB
+
+# Limits consumed by apps/common/validators.py.
+MAX_IMAGE_SIZE_MB = 5
+MAX_FLOOR_PLAN_SIZE_MB = 10
+MIN_IMAGE_DIMENSIONS = (400, 300)
+MAX_IMAGE_DIMENSIONS = (8000, 8000)
+ALLOWED_IMAGE_MIME_TYPES = ("image/jpeg", "image/png", "image/webp")
+ALLOWED_FLOOR_PLAN_MIME_TYPES = (
+    "image/jpeg", "image/png", "image/webp", "application/pdf",
+)
+
+# imagekit: generate thumbnail/medium/large derivatives on first request.
+IMAGEKIT_DEFAULT_CACHEFILE_STRATEGY = "imagekit.cachefiles.strategies.Optimistic"
+
+
+# ---------------------------------------------------------------------------
+# django-unfold — admin theme
+# ---------------------------------------------------------------------------
+UNFOLD = {
+    "SITE_TITLE": "Anjaneya Admin",
+    "SITE_HEADER": "Anjaneya Real Estate",
+    "SITE_SUBHEADER": "Listings, enquiries, content",
+    "SITE_URL": "/",
+    "SHOW_HISTORY": True,
+    "SHOW_VIEW_ON_SITE": True,
+    "DASHBOARD_CALLBACK": "core.admin_dashboard.dashboard_callback",
+    "SIDEBAR": {
+        "show_search": True,
+        "show_all_applications": False,
+        "navigation": [
+            {
+                "title": "Listings",
+                "separator": True,
+                "items": [
+                    {
+                        "title": "Projects",
+                        "icon": "domain",
+                        "link": "/admin/projects/project/",
+                    },
+                    {
+                        "title": "Cities",
+                        "icon": "location_city",
+                        "link": "/admin/catalog/city/",
+                    },
+                    {
+                        "title": "Categories",
+                        "icon": "category",
+                        "link": "/admin/catalog/category/",
+                    },
+                    {
+                        "title": "Developers",
+                        "icon": "engineering",
+                        "link": "/admin/catalog/developer/",
+                    },
+                    {
+                        "title": "Amenities",
+                        "icon": "pool",
+                        "link": "/admin/catalog/amenity/",
+                    },
+                ],
+            },
+            {
+                "title": "Inquiries",
+                "separator": True,
+                "items": [
+                    {
+                        "title": "Enquiries",
+                        "icon": "mail",
+                        "link": "/admin/enquiries/enquiry/",
+                    },
+                ],
+            },
+            {
+                "title": "Content",
+                "separator": True,
+                "items": [
+                    {
+                        "title": "Site settings",
+                        "icon": "settings",
+                        "link": "/admin/site_settings/sitesettings/",
+                    },
+                    {
+                        "title": "CMS pages",
+                        "icon": "article",
+                        "link": "/admin/site_settings/cmspage/",
+                    },
+                    {
+                        "title": "Team",
+                        "icon": "groups",
+                        "link": "/admin/team/teammember/",
+                    },
+                    {
+                        "title": "Testimonials",
+                        "icon": "format_quote",
+                        "link": "/admin/testimonials/testimonial/",
+                    },
+                ],
+            },
+            {
+                "title": "System",
+                "separator": True,
+                "items": [
+                    {
+                        "title": "Users",
+                        "icon": "person",
+                        "link": "/admin/auth/user/",
+                    },
+                    {
+                        "title": "Groups",
+                        "icon": "group",
+                        "link": "/admin/auth/group/",
+                    },
+                    {
+                        "title": "Failed notifications",
+                        "icon": "report",
+                        "link": "/admin/notifications/failednotification/",
+                    },
+                    {
+                        "title": "Periodic tasks",
+                        "icon": "schedule",
+                        "link": "/admin/django_celery_beat/periodictask/",
+                    },
+                    {
+                        "title": "Task results",
+                        "icon": "task_alt",
+                        "link": "/admin/django_celery_results/taskresult/",
+                    },
+                ],
+            },
+        ],
+    },
+}
+
+
+# ---------------------------------------------------------------------------
 # Default primary key field type
 # ---------------------------------------------------------------------------
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
@@ -158,12 +314,25 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # ---------------------------------------------------------------------------
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
+        # SessionAuthentication lets admins call admin-gated media endpoints
+        # straight from a browser after logging into /admin/.
+        "rest_framework.authentication.SessionAuthentication",
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ),
+    # Listing site: API is public-read. Writes happen via /admin/ only.
     "DEFAULT_PERMISSION_CLASSES": (
-        "rest_framework.permissions.IsAuthenticated",
+        "rest_framework.permissions.AllowAny",
     ),
-    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "DEFAULT_THROTTLE_CLASSES": (
+        "rest_framework.throttling.AnonRateThrottle",
+    ),
+    "DEFAULT_THROTTLE_RATES": {
+        "anon": "60/hour",
+        # Tight scope for the public POST /api/v1/enquiries/ — see
+        # apps/common/throttles.py:EnquiryThrottle.
+        "enquiry": "10/hour",
+    },
+    "DEFAULT_PAGINATION_CLASS": "common.pagination.StandardResultsPagination",
     "PAGE_SIZE": 20,
     "DEFAULT_FILTER_BACKENDS": (
         "django_filters.rest_framework.DjangoFilterBackend",
@@ -206,6 +375,64 @@ CORS_ALLOWED_ORIGINS = config(
     default="http://localhost:3000",
     cast=Csv(),
 )
+
+
+# ---------------------------------------------------------------------------
+# Email
+# ---------------------------------------------------------------------------
+# Default to Django's SMTP backend; development.py overrides to console.
+EMAIL_BACKEND = config(
+    "EMAIL_BACKEND", default="django.core.mail.backends.smtp.EmailBackend",
+)
+EMAIL_HOST = config("EMAIL_HOST", default="localhost")
+EMAIL_PORT = config("EMAIL_PORT", default=25, cast=int)
+EMAIL_HOST_USER = config("EMAIL_HOST_USER", default="")
+EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD", default="")
+EMAIL_USE_TLS = config("EMAIL_USE_TLS", default=False, cast=bool)
+DEFAULT_FROM_EMAIL = config(
+    "DEFAULT_FROM_EMAIL", default="no-reply@anjaneyaglobalrealty.com",
+)
+# CSV of admin emails that receive new-inquiry notifications. Empty = none.
+INQUIRY_NOTIFICATION_EMAILS = config(
+    "INQUIRY_NOTIFICATION_EMAILS", default="", cast=Csv(),
+)
+
+
+# ---------------------------------------------------------------------------
+# Celery
+# ---------------------------------------------------------------------------
+# Broker: Redis by default; override via env. Database 1 keeps queue keys
+# out of database 0 if you happen to share a Redis instance.
+CELERY_BROKER_URL = config(
+    "CELERY_BROKER_URL", default="redis://localhost:6379/1",
+)
+# Result backend: store task results in the Django DB via django-celery-results
+# so admins can see successes/failures without trawling logs.
+CELERY_RESULT_BACKEND = "django-db"
+CELERY_CACHE_BACKEND = "django-cache"
+
+# Beat (periodic-task scheduler) reads schedule from the DB so admins can
+# tune cron expressions live via /admin/django_celery_beat/.
+CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
+
+CELERY_TASK_SERIALIZER = "json"
+CELERY_RESULT_SERIALIZER = "json"
+CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_TIMEZONE = TIME_ZONE
+
+CELERY_TASK_TRACK_STARTED = True
+CELERY_TASK_TIME_LIMIT = 5 * 60          # hard kill at 5 minutes
+CELERY_TASK_SOFT_TIME_LIMIT = 4 * 60     # soft warning at 4 minutes
+# `acks_late` + `reject_on_worker_lost` re-queue tasks if a worker dies
+# mid-execution, paired with prefetch=1 so a slow task doesn't starve others.
+CELERY_TASK_ACKS_LATE = True
+CELERY_TASK_REJECT_ON_WORKER_LOST = True
+CELERY_WORKER_PREFETCH_MULTIPLIER = 1
+
+# Tests run tasks inline so we don't need a worker process. Both base
+# and development.py have this off; tests flip it on via override_settings.
+CELERY_TASK_ALWAYS_EAGER = False
+CELERY_TASK_EAGER_PROPAGATES = True
 
 
 # ---------------------------------------------------------------------------

@@ -1,0 +1,14 @@
+New site enquiry
+================
+
+Source: {{ source_label }}
+
+Name:    {{ full_name }}
+Mobile:  {{ mobile }}
+Email:   {{ email|default:"—" }}
+Message: {{ message|default:"—" }}
+
+Submitted: {{ created_at }}
+IP:        {{ ip_address|default:"—" }}
+
+Admin:     {{ admin_path }}

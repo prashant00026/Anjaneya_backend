@@ -1,0 +1,30 @@
+{% extends "emails/base.html" %}
+{% block subject %}{{ count }} unread inquiry(ies) older than 24 hours{% endblock %}
+{% block body %}
+<h2 style="margin:0 0 4px;font-size:18px;">Stale inquiries</h2>
+<p style="margin:0 0 16px;color:#666;font-size:13px;">
+  {{ count }} inquir{{ count|pluralize:"y,ies" }} {{ count|pluralize:"is,are" }}
+  still marked <code>new</code> and older than {{ cutoff|date:"Y-m-d H:i" }}.
+</p>
+
+<table cellspacing="0" cellpadding="6" style="border-collapse:collapse;border:1px solid #eee;font-size:13px;width:100%;">
+  <thead><tr style="background:#fafafa;">
+    <th style="text-align:left;color:#666;font-weight:600;">#</th>
+    <th style="text-align:left;color:#666;font-weight:600;">Name</th>
+    <th style="text-align:left;color:#666;font-weight:600;">Mobile</th>
+    <th style="text-align:left;color:#666;font-weight:600;">Project</th>
+    <th style="text-align:left;color:#666;font-weight:600;">Submitted</th>
+  </tr></thead>
+  <tbody>
+  {% for e in enquiries %}
+    <tr>
+      <td>{{ e.id }}</td>
+      <td>{{ e.name }}</td>
+      <td>{{ e.mobile }}</td>
+      <td>{{ e.project_title|default:"—" }}</td>
+      <td>{{ e.created_at|date:"Y-m-d H:i" }}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

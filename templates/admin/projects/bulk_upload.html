@@ -1,0 +1,15 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block content %}
+<p><a href="{% url 'admin:projects_project_change' project.pk %}">&larr; Back to {{ project }}</a></p>
+
+<h1>{{ title }}</h1>
+
+<form method="post" enctype="multipart/form-data">
+  {% csrf_token %}
+  <p>Select one or more images (JPEG / PNG / WEBP, up to 5 MB each).</p>
+  {{ form.as_p }}
+  <button type="submit" class="default">Upload</button>
+</form>
+{% endblock %}

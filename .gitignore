@@ -63,3 +63,6 @@ htmlcov/
 *~
 .DS_Store
 Thumbs.db
+
+# --- Research artifacts (reproducible via the scripts beside them) ----------
+scripts/crawl_out/

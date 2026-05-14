@@ -1,0 +1,16 @@
+Daily summary
+=============
+Window: {{ since|date:"Y-m-d H:i" }} → {{ now|date:"Y-m-d H:i" }}
+
+Site enquiries (contact page): {{ site_enquiries_count }}
+Project enquiries (sidebar):   {{ project_enquiries_count }}
+New projects published:        {{ new_projects_count }}
+
+{% if top_projects %}
+Top 5 projects by enquiries:
+{% for row in top_projects %}  - {{ row.project__title }} — {{ row.c }}
+{% endfor %}{% endif %}
+{% if top_localities %}
+Top 5 localities by enquiries:
+{% for row in top_localities %}  - {{ row.project__locality }} — {{ row.c }}
+{% endfor %}{% endif %}

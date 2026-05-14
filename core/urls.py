@@ -18,13 +18,14 @@ from drf_spectacular.views import (
     SpectacularRedocView,
     SpectacularSwaggerView,
 )
-from rest_framework.routers import DefaultRouter
-
-# Empty router for now — app viewsets will be registered here in step 2.
-router = DefaultRouter()
 
 api_v1_patterns = [
-    path("", include(router.urls)),
+    path("", include("catalog.urls")),
+    path("", include("projects.urls")),
+    path("", include("enquiries.urls")),
+    path("", include("team.urls")),
+    path("", include("testimonials.urls")),
+    path("", include("site_settings.urls")),
 ]
 
 urlpatterns = [
@@ -40,3 +41,12 @@ urlpatterns = [
 # served by the reverse proxy (or S3 via django-storages).
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    # django-debug-toolbar is dev-only; mount its URLs when DEBUG is on
+    # AND the package is actually installed (so production.py isn't
+    # accidentally importing a missing dependency).
+    try:
+        import debug_toolbar  # noqa: F401
+
+        urlpatterns += [path("__debug__/", include("debug_toolbar.urls"))]
+    except ImportError:
+        pass

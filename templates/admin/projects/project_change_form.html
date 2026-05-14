@@ -1,0 +1,63 @@
+{% extends "admin/change_form.html" %}
+
+{% comment %}
+The `<li>` elements below sit inside Django admin's `object-tools` block
+which the parent template wraps in `<ul class="object-tools">` — the
+linter's "li must be in ul/ol" warning is a false positive for this
+template-inheritance pattern.
+{% endcomment %}
+
+{% block extrastyle %}
+  {{ block.super }}
+  <style>
+    .anj-recent-enquiries        { width: 100%; border-collapse: collapse; }
+    .anj-recent-enquiries thead  { background: #fafafa; }
+    .anj-recent-enquiries th     { text-align: left; padding: 6px; }
+    .anj-recent-enquiries td     { padding: 6px; }
+  </style>
+{% endblock %}
+
+{% block object-tools-items %}
+  {% if view_on_site_url %}
+    <li>
+      <a href="{{ view_on_site_url }}" target="_blank" class="historylink">View on site</a>
+    </li>
+  {% endif %}
+  {% if bulk_upload_url %}
+    <li>
+      <a href="{{ bulk_upload_url }}" class="historylink">Bulk upload images</a>
+    </li>
+  {% endif %}
+  {{ block.super }}
+{% endblock %}
+
+{% block after_field_sets %}
+  {{ block.super }}
+  {% if recent_enquiries %}
+    <fieldset class="module">
+      <h2>Recent enquiries (last 5)</h2>
+      <table class="anj-recent-enquiries">
+        <thead>
+          <tr>
+            <th>When</th>
+            <th>Name</th>
+            <th>Mobile</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+        {% for e in recent_enquiries %}
+          <tr>
+            <td>{{ e.created_at|date:"Y-m-d H:i" }}</td>
+            <td>
+              <a href="/admin/enquiries/enquiry/{{ e.pk }}/change/">{{ e.full_name }}</a>
+            </td>
+            <td>{{ e.mobile }}</td>
+            <td>{{ e.get_status_display }}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </fieldset>
+  {% endif %}
+{% endblock %}

@@ -13,6 +13,8 @@ Production-ready Django + DRF backend for the Anjaneya Real Estate platform.
 - **psycopg2-binary**, **python-decouple**, **Pillow**
 - **django-storages** (future S3 media), **WhiteNoise** (static)
 - **Gunicorn** (prod server)
+- **Celery + Redis** (async email), **django-celery-beat** (periodic tasks), **django-celery-results** (task results in admin)
+- **django-imagekit** (thumbnails), **python-magic** (real mime sniff)
 
 ## Quick start
 
@@ -38,6 +40,31 @@ cp .env.example .env
 # 5. Migrate + run
 python manage.py migrate
 python manage.py runserver
+```
+
+## Running locally with Celery
+
+The web process works fine on its own — inquiry emails queue into Redis
+and drain when a worker is online. To actually deliver them (and run
+the periodic admin tasks) you need three more processes:
+
+```powershell
+# Terminal 1 — Django (above)
+
+# Terminal 2 — Redis
+#   Windows: install Memurai (https://www.memurai.com/) — runs on 6379
+#   macOS:   brew services start redis
+#   Linux:   sudo service redis-server start
+
+# Terminal 3 — Celery worker
+#   On Windows the prefork pool is broken; `--pool=solo` is required.
+.\venv\Scripts\celery.exe -A core worker -l info --pool=solo
+
+# Terminal 4 — Celery beat (only when testing periodic schedules)
+.\venv\Scripts\celery.exe -A core beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+
+# Optional — Flower monitoring UI at http://localhost:5555/
+.\venv\Scripts\celery.exe -A core flower --port=5555
 ```
 
 The API will be live at <http://127.0.0.1:8000/>.

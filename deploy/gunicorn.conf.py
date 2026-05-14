@@ -8,9 +8,12 @@ import os
 
 # Bind to the Unix socket systemd creates via RuntimeDirectory=anjaneya.
 bind = "unix:/run/anjaneya/gunicorn.sock"
+umask = 0o007              # creates socket with mode 660
+
+
 
 # 2 * vCPU + 1 = 5 workers, gthread class with 2 threads each.
-workers = int(os.environ.get("GUNICORN_WORKERS", 5))
+workers = int(os.environ.get("GUNICORN_WORKERS", 3))
 worker_class = "gthread"
 threads = int(os.environ.get("GUNICORN_THREADS", 2))
 worker_connections = 1000

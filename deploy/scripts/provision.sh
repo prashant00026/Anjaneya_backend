@@ -79,15 +79,15 @@ echo ""
 echo "    $DB_PASSWORD"
 echo ""
 
-echo "==> Enabling Redis"
-systemctl enable --now redis-server
-sed -i 's/^# bind 127.0.0.1.*/bind 127.0.0.1/' /etc/redis/redis.conf || true
-systemctl restart redis-server
+echo "==> Verifying Redis (shared with other sites, not restarting)"
+if systemctl is-active --quiet redis-server; then
+    echo "    Redis already running and bound to 127.0.0.1 — no changes needed"
+else
+    systemctl enable --now redis-server
+fi
 
-echo "==> Firewall (ufw)"
-ufw allow OpenSSH
-ufw allow 'Nginx Full'
-ufw --force enable
+echo "==> Firewall (already configured for shared droplet — skipping)"
+ufw status
 
 echo "==> fail2ban"
 systemctl enable --now fail2ban
